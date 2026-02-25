@@ -36,12 +36,12 @@ If none of these triggers are present, **skip step 4 entirely** and go directly 
 
 ## Worktree Strategy
 
-All engineers and the release manager work in **isolated git worktrees** created via `git worktree add`. This keeps the main worktree clean for the team lead.
+All engineers and the release manager work in **isolated git worktrees** created via `git worktree add`. This keeps the main worktree clean for the team lead. All worktrees are created inside the `.claude/worktrees/` directory within the repository root.
 
-- **Engineers:** Each creates a worktree at `../<repo>-worktree-<agent-name>` and works on a `feature/<name>` branch inside it.
-- **Release Manager:** Creates a worktree at `../<repo>-worktree-release` on an `integration/<goal-slug>` branch. Merges all feature branches into this integration branch, verifies checks, then opens a PR to the target branch.
+- **Engineers:** Each creates a worktree at `.claude/worktrees/<agent-name>-<name>` and works on a `feature/<name>` branch inside it. Engineers **never push** s their branches — all work stays local.
+- **Release Manager:** Creates a worktree at `.claude/worktrees/release` on an `integration/<goal-slug>` branch. Merges all engineer branches **locally** (not from remote), verifies checks, then pushes the integration branch and opens a PR to the target branch.
 
-Worktrees are cleaned up during shutdown.
+After the release manager has merged all feature branches, engineers' worktrees and local branches are deleted. The release manager's worktree is cleaned up during shutdown.
 
 ## Workflow
 
@@ -83,15 +83,15 @@ The team lead:
 Each engineer:
 
 1. Claims their assigned task.
-2. Creates an **isolated git worktree** from the repository root using `git worktree add`.
+2. Creates an **isolated git worktree** inside `.claude/worktrees/` using `git worktree add`.
 3. Creates a branch named `feature/<short-meaningful-name>`.
 4. Implements the code and writes all necessary automated tests.
 5. Runs manual verification if automated tests are insufficient.
 6. Before finishing, ensures **all typecheck, lint, and test commands pass**.
-7. Commits and pushes their feature branch.
-8. Reports completion to the team lead via `SendMessage`, including their branch name.
+7. **Commits locally** (does NOT push to remote).
+8. Reports completion to the team lead via `SendMessage`, including their **branch name** and **worktree path**.
 
-Engineers work in parallel — maximize concurrency.
+Engineers work in parallel — maximize concurrency. Branches remain local until the release manager merges them.
 
 ### 4. Security Review (Security Expert) — ONLY IF OPTED IN
 
@@ -110,19 +110,20 @@ Once implementation tasks are complete:
 Once implementation is complete (and security review passes, if applicable):
 
 1. Team lead sends a message to `release-manager` with all `feature/` branch names and the **target branch** (defaults to `main`).
-2. Release manager creates an isolated worktree on an `integration/<goal-slug>` branch.
-3. Merges all feature branches into the integration branch.
+2. Release manager creates an isolated worktree at `.claude/worktrees/release` on an `integration/<goal-slug>` branch.
+3. Merges all feature branches **locally** (from local refs, not remote) into the integration branch.
 4. If merge conflicts arise, resolves them carefully.
-5. After merging, runs **all typecheck, lint, and test commands** to confirm nothing is broken.
-6. Pushes the integration branch and **opens a PR** to the target branch using `gh pr create`.
-7. Reports the PR URL to the team lead.
+5. After all feature branches are merged, **cleans up engineer worktrees and deletes their local branches** (`git worktree remove` + `git branch -D`).
+6. Runs **all typecheck, lint, and test commands** to confirm nothing is broken.
+7. Pushes the integration branch and **opens a PR** to the target branch using `gh pr create`.
+8. Reports the PR URL to the team lead.
 
 ### 6. Shutdown
 
 After successful release:
 
 1. Team lead sends `shutdown_request` to all agents.
-2. All agents clean up their worktrees before shutting down (`git worktree remove`).
+2. Release manager cleans up its own worktree (`git worktree remove .claude/worktrees/release`). Engineer worktrees were already cleaned up during the release step.
 3. Clean up with `TeamDelete`.
 
 ## Decision Making

@@ -14,27 +14,28 @@ You MUST only work on tasks matching your specialization. If assigned a task out
 
 1. Check `TaskList` for tasks assigned to you.
 2. Claim your task with `TaskUpdate` (status: `in_progress`).
-3. **Create an isolated git worktree** from the repository root:
+3. Define a `<short-meaningful-name>` for your branch that describes the feature/fix/refactor you will implement (e.g., `add-user-auth-endpoint`).
+4. Define a `<worktree-name>` that includes your agent name and the branch name (e.g., `backend-1-add-user-auth-endpoint`).
+5. **Create an isolated git worktree** inside `.claude/worktrees/`:
    ```bash
-   git worktree add ../<repo>-worktree-<your-name> feature/<short-meaningful-name>
-   cd ../<repo>-worktree-<your-name>
+   mkdir -p .claude/worktrees
+   git worktree add .claude/worktrees/<worktree-name> feature/<short-meaningful-name>
+   cd .claude/worktrees/<worktree-name>
    ```
-   Replace `<repo>` with the repository directory name, `<your-name>` with your agent name (e.g., `be-1`), and `<short-meaningful-name>` with a descriptive branch name.
-4. Implement the feature/fix/refactor as described in the task.
-5. Write all necessary **automated tests** (unit, integration as appropriate).
-6. Run manual verification if automated tests are insufficient to confirm correctness.
-7. Before marking done, ensure **all of the following pass**:
+6. Implement the feature/fix/refactor as described in the task.
+7. Write all necessary **automated tests** (unit, integration as appropriate).
+8. Run manual verification if automated tests are insufficient to confirm correctness.
+9. Before marking done, ensure **all of the following pass**:
    - Typecheck
    - Linting
    - All tests
-8. **Commit and push** your feature branch:
+8. **Commit locally** (do NOT push to remote):
    ```bash
    git add <files>
    git commit -m "<descriptive message>"
-   git push -u origin feature/<short-meaningful-name>
    ```
 9. Mark your task as `completed` via `TaskUpdate`.
-10. Report completion to the team lead via `SendMessage`, including your **branch name**.
+10. Report completion to the team lead via `SendMessage`, including your **branch name** and **worktree path** (e.g., `.claude/worktrees/<worktree-name>`).
 
 ## Branch Naming
 
@@ -51,10 +52,7 @@ You are NOT done until typecheck, lint, and tests all pass. If any fail:
 
 ## Cleanup
 
-Before shutting down, remove your worktree:
-```bash
-git worktree remove ../<repo>-worktree-<your-name>
-```
+Your worktree and local branch will be cleaned up by the **release manager** after merging. You do not need to remove them yourself.
 
 ## Communication
 
